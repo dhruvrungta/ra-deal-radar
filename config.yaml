@@ -1,0 +1,117 @@
+# RA Deal Radar configuration
+
+schedule:
+  # 7:00 AM IST every Monday == 01:30 UTC (IST is UTC+5:30)
+  cron: "30 1 * * 1"
+  timezone: "Asia/Kolkata"
+
+recipients:
+  to:
+    - "pankaj@rungtaadvisors.com"
+    - "itzdhruvrungta@gmail.com"
+  # Must match the authenticated Gmail account (or a verified alias) or
+  # Gmail will reject/rewrite the From header.
+  from_address: "dhruvrungta2007@gmail.com"
+  from_name: "RA Deal Radar"
+  subject_prefix: "RA Deal Radar"
+
+sources:
+  # RSS sources: lowest maintenance, start here.
+  rss:
+    - name: vccircle
+      url: "https://www.vccircle.com/feed"
+      # As of 2026-09-16 this endpoint 500s server-side; no working RSS URL
+      # found on the site. Re-check and flip to true once it's back.
+      enabled: false
+    - name: entrackr
+      url: "https://entrackr.com/rss"
+      enabled: true
+    - name: inc42
+      url: "https://inc42.com/feed/"
+      enabled: true
+
+  # General news sites: HTML scrapers, more brittle. Off by default until
+  # ingest/sources.py has working selectors for each.
+  scrape:
+    - name: economic_times
+      url: "https://economictimes.indiatimes.com/markets/mergers-acquisitions"
+      enabled: false
+    - name: mint
+      url: "https://www.livemint.com/companies"
+      enabled: false
+    - name: business_standard
+      url: "https://www.business-standard.com/companies/mergers-acquisitions"
+      enabled: false
+    - name: moneycontrol
+      url: "https://www.moneycontrol.com/news/business/mergers-acquisitions/"
+      enabled: false
+
+  # Regulatory/official sources: structured but need session handling or
+  # PDF parsing. Off by default until implemented.
+  regulatory:
+    - name: bse_announcements
+      url: "https://www.bseindia.com/corporates/ann.html"
+      enabled: false
+    - name: nse_announcements
+      url: "https://www.nseindia.com/api/corporate-announcements"
+      enabled: false
+    - name: cci_combinations
+      url: "https://www.cci.gov.in/combination/combination-cases"
+      enabled: false
+    - name: sebi_sast
+      url: "https://www.sebi.gov.in/sebiweb/other/OtherAction.do?doRecognisedFpi=yes"
+      enabled: false
+
+classification:
+  # Gemini free tier (Google AI Studio key, no credit card needed) — Flash
+  # models only, Pro is paid-only. gemini-2.5-flash/-lite and
+  # gemini-flash-latest were deprecated/overloaded as of 2026-09-16;
+  # Google's own deprecation error for 2.5-flash pointed here. Used this
+  # one to build the real content that actually shipped. Check
+  # aistudio.google.com if this one stops working.
+  model: "gemini-3.6-flash"
+  batch_size: 25
+  max_tokens: 8000
+
+taxonomy:
+  deal_types:
+    - ma_strategic
+    - pe_buyout
+    - pe_growth
+    - pe_minority
+    - vc
+    - pe_exit
+  cross_border:
+    - domestic
+    - inbound
+    - outbound
+  stages:
+    - rumored
+    - announced
+    - definitive_agreement
+    - completed
+    - terminated
+
+dedupe:
+  # rapidfuzz token_sort_ratio threshold (0-100) for same-week duplicate matching
+  same_week_similarity_threshold: 82
+  # deal size tolerance (fractional) when comparing two deals as the "same" deal
+  deal_size_tolerance_pct: 0.15
+
+database:
+  path: "store/deal_radar.db"
+
+digest:
+  top_deals_count: 5
+  # PE/VC deals below this disclosed size (or with undisclosed size) are
+  # dropped from the "PE — Buyouts & Growth" section entirely — keeps that
+  # section to substantial deal flow instead of every small seed round.
+  pe_vc_min_size_usd_m: 20
+  template_path: "digest/template.html"
+  output_path: "output/digest_latest.html"
+  logo_path: "assets/rungta_logo.png"
+  site_url: "https://www.rungtaadvisors.com"
+  brand:
+    navy: "#363891"
+    orange: "#F89A55"
+    gray: "#6C7A89"

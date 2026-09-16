@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RA Deal Radar — Week of {{ week_start.strftime('%d %b %Y') }}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding:24px 0;">
+<tr><td align="center">
+<table role="presentation" width="680" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:6px; overflow:hidden;">
+
+<tr><td style="background-color:{{ brand.navy }}; padding:0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+    <td style="background-color:{{ brand.orange }}; width:6px;"></td>
+    <td style="padding:20px 28px;">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        {% if logo_data_uri %}
+        <td style="padding-right:14px; vertical-align:middle;">
+          <a href="{{ site_url }}"><img src="{{ logo_data_uri }}" width="52" height="41" alt="Rungta Advisors" style="display:block; border:0;"></a>
+        </td>
+        {% endif %}
+        <td style="vertical-align:middle;">
+          <div style="color:#ffffff; font-size:19px; font-weight:bold; letter-spacing:0.3px;">RA Deal Radar</div>
+          <div style="color:{{ brand.orange }}; font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-top:1px;">by Rungta Advisors</div>
+        </td>
+      </tr></table>
+      <div style="color:#c2c4e6; font-size:13px; margin-top:10px;">
+        Week of {{ week_start.strftime('%d %b %Y') }} – {{ week_end.strftime('%d %b %Y') }}
+        &middot; {{ total_deals }} deal{{ 's' if total_deals != 1 else '' }} tracked
+      </div>
+    </td>
+  </tr></table>
+</td></tr>
+
+{% macro deal_row(d) %}
+<tr>
+  <td style="padding:10px 0; border-bottom:1px solid #eeeeee;">
+    <a href="{{ d.url }}" style="color:{{ brand.navy }}; font-size:14px; font-weight:bold; text-decoration:none;">{{ d.headline }}</a>
+    <div style="color:#555555; font-size:13px; margin-top:3px;">{{ d.summary }}</div>
+    <div style="color:#888888; font-size:12px; margin-top:4px;">
+      {{ d.source }}
+      {%- if d.deal_size_display %} &middot; {{ d.deal_size_display }}{% endif %}
+      {%- if d.advisors %} &middot; Advisors: {{ d.advisors | join(', ') }}{% endif %}
+      {%- if d.stage %} &middot; {{ d.stage.replace('_', ' ') | title }}{% endif %}
+    </div>
+  </td>
+</tr>
+{% endmacro %}
+
+{% macro section(title, emoji, deals) %}
+{% if deals %}
+<tr><td style="padding:24px 32px 0 32px;">
+  <div style="font-size:16px; font-weight:bold; color:{{ brand.navy }}; border-bottom:2px solid {{ brand.navy }}; padding-bottom:6px;">
+    {{ emoji }} {{ title }}
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    {% for d in deals %}{{ deal_row(d) }}{% endfor %}
+  </table>
+</td></tr>
+{% endif %}
+{% endmacro %}
+
+<tr><td style="padding:0 32px;">
+{% if total_deals == 0 %}
+  <div style="padding:32px 0; color:#666666; font-size:14px;">No new deals matched this week.</div>
+{% endif %}
+</td></tr>
+
+{{ section("Top deals this week (by size)", "📈", sections.top_deals) }}
+{{ section("Domestic M&A", "🇮🇳", sections.domestic_ma) }}
+{{ section("Cross-Border M&A — Inbound", "🌍", sections.cross_border_inbound) }}
+{{ section("Cross-Border M&A — Outbound", "🌍", sections.cross_border_outbound) }}
+{{ section("PE — Buyouts & Growth", "💰", sections.pe_buyouts_growth) }}
+{{ section("Notable advisor mandates", "🏦", sections.advisor_mandates) }}
+{{ section("In talks / rumored (not yet confirmed)", "📋", sections.in_talks) }}
+
+<tr><td style="padding:24px 32px 28px 32px; border-top:1px solid #eeeeee; margin-top:24px;">
+  <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+    {% if logo_data_uri %}
+    <td style="padding-right:10px; vertical-align:middle;">
+      <img src="{{ logo_data_uri }}" width="28" height="22" alt="Rungta Advisors" style="display:block; border:0;">
+    </td>
+    {% endif %}
+    <td style="vertical-align:middle;">
+      <div style="color:{{ brand.navy }}; font-size:12px; font-weight:bold;">Rungta Advisors</div>
+      <div style="color:#999999; font-size:11px; margin-top:2px;">
+        <a href="{{ site_url }}" style="color:#999999; text-decoration:underline;">{{ site_url.replace('https://', '').replace('http://', '') }}</a>
+        &middot; Generated automatically from public news and regulatory sources. Verify details before relying on them.
+      </div>
+    </td>
+  </tr></table>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
