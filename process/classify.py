@@ -28,10 +28,16 @@ firm's weekly deal-tracking digest covering India-related transactions.
 
 For EACH article given, decide whether it clearly describes a specific M&A, \
 private equity, or venture capital transaction (a deal involving an acquirer \
-and/or target company, an investment round, a buyout, or a formal exit). \
-If it does NOT — e.g. general market commentary, opinion pieces, unrelated \
-corporate news, earnings reports with no deal, or a deal too vague to extract \
-any party names — set "is_deal" to false and leave the other fields empty.
+and/or target company, an investment round, a buyout, or a formal exit) that \
+has an India connection — at least one of the acquirer, target, or investor \
+is an India-based/India-incorporated entity, or the deal is about Indian \
+operations/assets. If it does NOT — e.g. general market commentary, opinion \
+pieces, unrelated corporate news, earnings reports with no deal, a deal too \
+vague to extract any party names, or a real deal between two non-Indian \
+parties with no India angle (this firm's news sources cover global markets \
+too, not just India, so this happens) — set "is_deal" to false and leave the \
+other fields empty. A foreign-foreign deal is noise here even if it's large \
+or newsworthy.
 
 Set "index" on every result to the article's bracketed number (e.g. the
 article marked "[3]" gets index 3) — this is how results get matched back to
