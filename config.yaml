@@ -30,37 +30,39 @@ sources:
       url: "https://inc42.com/feed/"
       enabled: true
 
-  # General news sites: HTML scrapers, more brittle. Off by default until
-  # ingest/sources.py has working selectors for each.
+  # General news sites: HTML scrapers, more brittle than RSS. URLs verified
+  # working live on 2026-09-16; selectors live in ingest/sources.py.
   scrape:
     - name: economic_times
-      url: "https://economictimes.indiatimes.com/markets/mergers-acquisitions"
-      enabled: false
+      url: "https://economictimes.indiatimes.com/topic/mergers-and-acquisitions"
+      enabled: true
     - name: mint
       url: "https://www.livemint.com/companies"
-      enabled: false
+      enabled: true
     - name: business_standard
-      url: "https://www.business-standard.com/companies/mergers-acquisitions"
-      enabled: false
+      url: "https://www.business-standard.com/topic/mergers-acquisitions"
+      enabled: true
     - name: moneycontrol
-      url: "https://www.moneycontrol.com/news/business/mergers-acquisitions/"
-      enabled: false
+      url: "https://www.moneycontrol.com/deals-and-mergers/"
+      enabled: true
 
-  # Regulatory/official sources: structured but need session handling or
-  # PDF parsing. Off by default until implemented.
+  # Regulatory/official sources: structured, higher signal. NSE, CCI and
+  # SEBI verified working with a plain HTTP client on 2026-09-16. BSE sits
+  # behind Akamai bot-protection that needs real browser JS to pass — stays
+  # disabled until/unless that's worth a headless-browser dependency.
   regulatory:
     - name: bse_announcements
       url: "https://www.bseindia.com/corporates/ann.html"
       enabled: false
     - name: nse_announcements
       url: "https://www.nseindia.com/api/corporate-announcements"
-      enabled: false
+      enabled: true
     - name: cci_combinations
-      url: "https://www.cci.gov.in/combination/combination-cases"
-      enabled: false
+      url: "https://www.cci.gov.in/combination/orders-section31"
+      enabled: true
     - name: sebi_sast
-      url: "https://www.sebi.gov.in/sebiweb/other/OtherAction.do?doRecognisedFpi=yes"
-      enabled: false
+      url: "https://www.sebi.gov.in/sebiweb/home/HomeAction.do"
+      enabled: true
 
 classification:
   # Gemini free tier (Google AI Studio key, no credit card needed) — Flash
@@ -70,8 +72,14 @@ classification:
   # one to build the real content that actually shipped. Check
   # aistudio.google.com if this one stops working.
   model: "gemini-3.6-flash"
-  batch_size: 25
-  max_tokens: 8000
+  # 9 sources now produce ~250 articles/week; a bigger batch means fewer
+  # requests against the free tier's ~5/min rate limit.
+  batch_size: 40
+  max_tokens: 12000
+  # Seconds to wait between classify calls — paces under the observed
+  # ~5 requests/minute free-tier limit so a big run doesn't burn through
+  # retries. Bump if Google's actual limit turns out looser than observed.
+  min_seconds_between_calls: 13
 
 taxonomy:
   deal_types:

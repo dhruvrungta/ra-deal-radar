@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 from typing import Optional
 
@@ -129,14 +130,32 @@ def _chunk(items: list, size: int) -> list[list]:
 
 
 RETRYABLE_STATUS_CODES = {429, 503}
+MAX_RETRY_WAIT_SECONDS = 65
+
+
+def _server_retry_delay(exc: errors.APIError) -> Optional[float]:
+    """429 responses tell us exactly how long to wait (RetryInfo.retryDelay,
+    e.g. "52s") — parsing that beats guessing with exponential backoff,
+    especially for a per-minute or per-day quota reset."""
+    details = getattr(exc, "details", None)
+    if not isinstance(details, list):
+        return None
+    for item in details:
+        if isinstance(item, dict) and item.get("retryDelay"):
+            match = re.match(r"([\d.]+)s?$", str(item["retryDelay"]))
+            if match:
+                return float(match.group(1))
+    return None
 
 
 def _generate_with_retry(
     client: genai.Client, model: str, contents: str, config: types.GenerateContentConfig,
     max_attempts: int = 3,
 ) -> types.GenerateContentResponse:
-    """The free tier gets 503s under load fairly often; a short backoff-retry
-    avoids losing a whole batch (and delaying it a full week) to a blip."""
+    """The free tier gets 503s under load fairly often, and this project's
+    request volume can bump into the per-minute rate limit too — a
+    backoff-retry avoids losing a whole batch (and delaying it a full week)
+    to either."""
     last_exc: Optional[errors.APIError] = None
     for attempt in range(1, max_attempts + 1):
         try:
@@ -145,9 +164,10 @@ def _generate_with_retry(
             last_exc = exc
             if getattr(exc, "code", None) not in RETRYABLE_STATUS_CODES or attempt == max_attempts:
                 raise
-            wait = 2 ** attempt
+            wait = _server_retry_delay(exc) or (2**attempt)
+            wait = min(wait, MAX_RETRY_WAIT_SECONDS)
             logger.warning(
-                "Gemini call failed (%s), retrying in %ds (attempt %d/%d)",
+                "Gemini call failed (%s), retrying in %.0fs (attempt %d/%d)",
                 exc, wait, attempt, max_attempts,
             )
             time.sleep(wait)
@@ -176,11 +196,22 @@ def classify_articles(
     model = cfg.get("model", "gemini-2.5-flash")
     batch_size = cfg.get("batch_size", 25)
     max_tokens = cfg.get("max_tokens", 8000)
+    # The free tier's per-minute rate limit (observed as low as 5 req/min on
+    # gemini-3.6-flash) is tighter than its per-day cap — pacing calls to
+    # stay under it avoids most of the 429s a large multi-batch run would
+    # otherwise hit, rather than relying on reactive retries for each one.
+    min_seconds_between_calls = cfg.get("min_seconds_between_calls", 13)
 
     deals: list[Deal] = []
     processed_article_ids: list[str] = []
+    last_call_at: Optional[float] = None
 
     for batch in _chunk(articles, batch_size):
+        if last_call_at is not None:
+            elapsed = time.monotonic() - last_call_at
+            if elapsed < min_seconds_between_calls:
+                time.sleep(min_seconds_between_calls - elapsed)
+        last_call_at = time.monotonic()
         try:
             response = _generate_with_retry(
                 client,
