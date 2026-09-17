@@ -8,12 +8,15 @@ schedule:
   timezone: "Asia/Kolkata"
 
 recipients:
+  # The real list is set via the DIGEST_RECIPIENTS env var (comma-separated)
+  # / GitHub Actions secret, not here — this file is committed, and real
+  # recipient emails shouldn't be. These placeholders are only a fallback
+  # for local dev when DIGEST_RECIPIENTS isn't set. See send/mailer.py.
   to:
-    - "pankaj@rungtaadvisors.com"
-    - "itzdhruvrungta@gmail.com"
-  # Must match the authenticated Gmail account (or a verified alias) or
-  # Gmail will reject/rewrite the From header.
-  from_address: "dhruvrungta2007@gmail.com"
+    - "you@example.com"
+  # from_address isn't configurable — it always matches the authenticated
+  # SMTP_USER account, since Gmail rejects/rewrites a mismatched From header
+  # anyway.
   from_name: "RA Deal Radar"
   subject_prefix: "RA Deal Radar"
 

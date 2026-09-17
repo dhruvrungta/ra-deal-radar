@@ -53,6 +53,7 @@ Required in `.env` (or as real env vars / GitHub Actions secrets):
 | `SMTP_PORT` | e.g. `587` |
 | `SMTP_USER` | Sending Gmail address |
 | `SMTP_PASS` | A Gmail **app password**, not the account password — generate at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) (requires 2-Step Verification) |
+| `DIGEST_RECIPIENTS` | Comma-separated recipient list, e.g. `alice@firm.com,bob@firm.com`. Kept out of `config.yaml` on purpose — that file is committed, and real recipient emails shouldn't be |
 
 ## Running locally
 
@@ -83,7 +84,7 @@ The schedule that actually matters is the cron in [.github/workflows/weekly-dige
 3. Uploads the rendered digest as a workflow artifact
 4. Persists the DB back to cache for next week
 
-Repo secrets needed: `GEMINI_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`.
+Repo secrets needed: `GEMINI_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `DIGEST_RECIPIENTS`.
 
 To test without waiting for Monday or sending anything real, trigger it manually with the dry-run option:
 
