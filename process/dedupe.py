@@ -37,6 +37,20 @@ def _name_similarity(a: str | None, b: str | None) -> float:
     return fuzz.token_sort_ratio(a.lower().strip(), b.lower().strip())
 
 
+def _names_match(a: str | None, b: str | None, threshold: float) -> bool | None:
+    """True/False when both names are present and comparable; None when at
+    least one is missing (can't say either way). A substring check on top of
+    the fuzzy ratio catches "Groww" vs "Groww's parent, Billionbrains Garage
+    Ventures" — very different lengths defeat token_sort_ratio, but one
+    plainly contains the other."""
+    if not a or not b:
+        return None
+    an, bn = a.lower().strip(), b.lower().strip()
+    if an in bn or bn in an:
+        return True
+    return _name_similarity(a, b) >= threshold
+
+
 def _sizes_compatible(a: float | None, b: float | None, tolerance_pct: float) -> bool:
     if a is None or b is None:
         return True  # no info to contradict a match on names
@@ -51,18 +65,16 @@ def _same_deal(d1: Deal, d2: Deal, threshold: float, size_tolerance_pct: float) 
         return False  # nothing to compare on; treat as distinct
     if not _sizes_compatible(d1.deal_size_usd_m, d2.deal_size_usd_m, size_tolerance_pct):
         return False
-    # Outlets report acquirer/target with wildly different completeness —
-    # one names only the lead investor, another the full syndicate; one says
-    # "Groww", another names its holding company "Billionbrains Garage
-    # Ventures". A strong match on EITHER side is treated as decisive once
-    # size already lines up: two distinct deals in the same week sharing
-    # both a same-ish size AND a matching acquirer or target name by
-    # coincidence is unlikely enough to accept the tradeoff.
-    if d1.target and d2.target and _name_similarity(d1.target, d2.target) >= threshold:
-        return True
-    if d1.acquirer and d2.acquirer and _name_similarity(d1.acquirer, d2.acquirer) >= threshold:
-        return True
-    return False
+    # Target is checked first and, when both sides have one, is decisive
+    # either way — a clear target MISMATCH (e.g. "Slayd" vs "Dialflo", two
+    # different startups AJVC happened to fund at similarly tiny sizes the
+    # same week) must not be overridden by a matching acquirer. Acquirer is
+    # only the tiebreaker when target can't be compared on both sides at all
+    # (one outlet omits it, or reports a holding company instead).
+    target_match = _names_match(d1.target, d2.target, threshold)
+    if target_match is not None:
+        return target_match
+    return bool(_names_match(d1.acquirer, d2.acquirer, threshold))
 
 
 def _detail_score(d: Deal) -> tuple:
