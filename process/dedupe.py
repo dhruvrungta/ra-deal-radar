@@ -51,16 +51,17 @@ def _same_deal(d1: Deal, d2: Deal, threshold: float, size_tolerance_pct: float) 
         return False  # nothing to compare on; treat as distinct
     if not _sizes_compatible(d1.deal_size_usd_m, d2.deal_size_usd_m, size_tolerance_pct):
         return False
-    # The target (the company raising money / being acquired) is reported
-    # far more consistently across outlets than the acquirer/investor list —
-    # one outlet often names only the lead investor, another "not disclosed",
-    # another the full syndicate. So a strong target match plus a compatible
-    # deal size is treated as decisive on its own; acquirer match is only
-    # needed as a fallback when target isn't comparable on both sides.
-    if d1.target and d2.target:
-        return _name_similarity(d1.target, d2.target) >= threshold
-    if d1.acquirer and d2.acquirer:
-        return _name_similarity(d1.acquirer, d2.acquirer) >= threshold
+    # Outlets report acquirer/target with wildly different completeness —
+    # one names only the lead investor, another the full syndicate; one says
+    # "Groww", another names its holding company "Billionbrains Garage
+    # Ventures". A strong match on EITHER side is treated as decisive once
+    # size already lines up: two distinct deals in the same week sharing
+    # both a same-ish size AND a matching acquirer or target name by
+    # coincidence is unlikely enough to accept the tradeoff.
+    if d1.target and d2.target and _name_similarity(d1.target, d2.target) >= threshold:
+        return True
+    if d1.acquirer and d2.acquirer and _name_similarity(d1.acquirer, d2.acquirer) >= threshold:
+        return True
     return False
 
 
