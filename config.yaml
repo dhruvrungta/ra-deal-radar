@@ -1,8 +1,10 @@
 # RA Deal Radar configuration
 
 schedule:
-  # 7:00 AM IST every Monday == 01:30 UTC (IST is UTC+5:30)
-  cron: "30 1 * * 1"
+  # Informational only — the real trigger is the cron in
+  # .github/workflows/weekly-digest.yml. Keep these two in sync.
+  # 9:00 AM IST every Monday == 03:30 UTC (IST is UTC+5:30)
+  cron: "30 3 * * 1"
   timezone: "Asia/Kolkata"
 
 recipients:
